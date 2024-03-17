@@ -171,8 +171,8 @@ class erasetoolController {
 
     let rect = e.target.getBoundingClientRect();
     this.model.pointer.x =
-      ((e.clientX - rect.left) / window.innerWidth) * 2 - 1;
+      ((e.clientX - rect.left) / (rect.right - rect.left)) * 2 - 1;
     this.model.pointer.y =
-      -((e.clientY - rect.top) / window.innerHeight) * 2 + 1;
+      -((e.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
   }
 }
