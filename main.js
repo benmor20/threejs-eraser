@@ -45,7 +45,6 @@ class Model {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     console.log(window.innerWidth, window.innerHeight);
-    // const offsets = generatePointerOffsets(3, 1, window.innerWidth, window.innerHeight);
 
     this.mouseDown = false;
     this.eraseMode = false;
@@ -176,27 +175,4 @@ class erasetoolController {
     this.model.pointer.y =
       -((e.clientY - rect.top) / window.innerHeight) * 2 + 1;
   }
-}
-
-function generatePointerOffsets(radius, delta, window_width, window_height) {
-  var ans = [];
-  for (var x = -radius; x <= radius; x++) {
-    if (x % delta != 0) continue;
-    for (var y = -radius; y <= radius; y++) {
-      if (y % delta != 0) continue;
-      const vec = new THREE.Vector2(x, y);
-      if (vec.length() <= radius) {
-        // Scale so range is -1 to 1
-        console.log("Adding " + x + " " + y);
-        ans.push(
-          new THREE.Vector2((2 * x) / window_width, (2 * y) / window_height)
-        );
-      }
-    }
-  }
-  console.log("Len pointer offsets " + ans.length);
-  for (var vec_idx = 0; vec_idx < ans.length; vec_idx++) {
-    console.log(ans[vec_idx]);
-  }
-  return ans;
 }
