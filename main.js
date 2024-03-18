@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 
 window.onload = () => {
   const model = new Model();
   new canvasController(model);
   new erasetoolViewer(model);
   new erasetoolController(model);
+  new filesaveController(model);
 };
 
 class Model {
@@ -34,7 +36,7 @@ class Model {
     this.loader = new GLTFLoader();
     this.meshObj;
     this.loader.load(
-      "./2011HondaOdysseyScan1.glb",
+      "./model.glb",
       this.loadMeshobj.bind(this),
       undefined,
       function (error) {
@@ -44,7 +46,8 @@ class Model {
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
-    console.log(window.innerWidth, window.innerHeight);
+
+    this.exporter = new GLTFExporter();
 
     this.mouseDown = false;
     this.eraseMode = false;
@@ -111,6 +114,21 @@ class Model {
     requestAnimationFrame(this.animate.bind(this));
     this.renderer.render(this.scene, this.camera);
   }
+
+  saveFile() {
+    this.exporter.parse(
+      this.meshObj,
+      (result) => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(
+          new Blob([JSON.stringify(result)], { type: "application/json" })
+        );
+        link.download = "model.glb";
+        link.click();
+      },
+      {}
+    );
+  }
 }
 
 class canvasController {
@@ -174,5 +192,18 @@ class erasetoolController {
       ((e.clientX - rect.left) / (rect.right - rect.left)) * 2 - 1;
     this.model.pointer.y =
       -((e.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
+  }
+}
+
+class filesaveController {
+  constructor(m) {
+    this.model = m;
+
+    document.body.addEventListener("keydown", (e) => this.documentKeyDown(e));
+  }
+  documentKeyDown(e) {
+    if (e.key === "s" || e.key === "S") {
+      this.model.saveFile();
+    }
   }
 }
