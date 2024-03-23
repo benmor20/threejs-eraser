@@ -3,6 +3,7 @@
     "three": "^0.162.0"
   },
   "devDependencies": {
-    "vite": "^5.1.6"
+    "vite": "^5.1.6",
+    "vite-plugin-node-polyfills": "^0.21.0"
   }
 }
