@@ -2,6 +2,14 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import https from "node:https";
+
+function breakPutUrl(url) {
+  const split_url = url.split(".com");
+  const hostname = split_url[0].slice(8) + ".com";
+  const path = split_url[1];
+  return [hostname, path];
+}
 
 window.onload = () => {
   const model = new Model();
@@ -34,9 +42,10 @@ class Model {
     this.controls.update();
 
     this.loader = new GLTFLoader();
+    this.get_url = "2011HondaOdysseyScan1_eehOOoM(3).glb";
     this.meshObj;
     this.loader.load(
-      "./model.glb",
+      this.get_url,
       this.loadMeshobj.bind(this),
       undefined,
       function (error) {
@@ -48,6 +57,9 @@ class Model {
     this.pointer = new THREE.Vector2();
 
     this.exporter = new GLTFExporter();
+    this.put_url =
+      "https://vehicle-scans.nyc3.digitaloceanspaces.com/vehicle-scans/media/lidar/lidar_scans/lidar_scans/2011HondaOdysseyScan1_eehOOoM.glb?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO00J9E8NFVHDW4ZJCVD%2F20240323%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date=20240323T202630Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d78cb3cfd59bf1c0a9db3a2b6bb90951252c914b350a9c609a903163a70bb908";
+    [this.hostname, this.path] = breakPutUrl(this.put_url);
 
     this.mouseDown = false;
     this.eraseMode = false;
@@ -115,19 +127,34 @@ class Model {
     this.renderer.render(this.scene, this.camera);
   }
 
-  saveFile() {
-    this.exporter.parse(
-      this.meshObj,
-      (result) => {
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(
-          new Blob([JSON.stringify(result)], { type: "application/json" })
-        );
-        link.download = "model.glb";
-        link.click();
-      },
-      {}
-    );
+  saveFile(data) {
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: this.hostname,
+          port: 443,
+          path: this.path,
+          method: "PUT",
+          headers: {
+            "Content-Length": new Blob([data]).size,
+          },
+        },
+        (res) => {
+          let responseBody = "";
+          res.on("data", (chunk) => {
+            responseBody += chunk;
+          });
+          res.on("end", () => {
+            resolve(responseBody);
+          });
+        }
+      );
+      req.on("error", (err) => {
+        reject(err);
+      });
+      req.write(data);
+      req.end();
+    });
   }
 }
 
@@ -199,11 +226,19 @@ class filesaveController {
   constructor(m) {
     this.model = m;
 
-    document.body.addEventListener("keydown", (e) => this.documentKeyDown(e));
+    this.submit_button = document.getElementById("submit_button");
+    this.submit_button.addEventListener("click", () =>
+      this.handleSubmitClick()
+    );
   }
-  documentKeyDown(e) {
-    if (e.key === "s" || e.key === "S") {
-      this.model.saveFile();
-    }
+  handleSubmitClick() {
+    this.model.exporter.parse(
+      this.model.meshObj,
+      (result) => {
+        const data = JSON.stringify(result);
+        this.model.saveFile(data);
+      },
+      {}
+    );
   }
 }
