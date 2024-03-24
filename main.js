@@ -64,6 +64,17 @@ class Model {
     this.mouseDown = false;
     this.eraseMode = false;
 
+    // this.baseURI = document.getElementById("put_url").baseURI;
+    // this.windshieldRemovalExt = JSON.parse(
+    //   document.getElementById("windshield_removal_ext").innerText
+    // ).slice(0, -2);
+    // this.addVehicleExt = JSON.parse(
+    //   document.getElementById("add_vehicle_ext").innerText
+    // );
+    // this.submitUrl =
+    //   this.baseURI.slice(0, this.baseURI.indexOf(this.windshieldRemovalExt)) +
+    //   this.addVehicleExt;
+
     this.erasemodeSubscribers = [];
 
     this.animate();
@@ -234,9 +245,12 @@ class filesaveController {
   handleSubmitClick() {
     this.model.exporter.parse(
       this.model.meshObj,
-      (result) => {
+      async (result) => {
         const data = JSON.stringify(result);
-        this.model.saveFile(data);
+        await this.model.saveFile(data);
+        // const link = document.createElement("a");
+        // link.href = this.model.submitUrl;
+        // link.click();
       },
       {}
     );
