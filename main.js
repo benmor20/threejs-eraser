@@ -42,7 +42,7 @@ class Model {
     this.controls.update();
 
     this.loader = new GLTFLoader();
-    this.get_url = "2011HondaOdysseyScan1_eehOOoM(3).glb";
+    this.get_url = "2011HondaOdysseyScan1.glb";
     this.meshObj;
     this.loader.load(
       this.get_url,
@@ -86,6 +86,12 @@ class Model {
 
   eButtonClicked() {
     this.erasemodeSubscribers.forEach((f) => f());
+  }
+
+  toggleEraseMode() {
+    this.eraseMode = !this.eraseMode;
+    this.controls.enabled = !this.eraseMode;
+    this.eButtonClicked();
   }
 
   loadMeshobj(gltf) {
@@ -213,12 +219,15 @@ class erasetoolController {
 
     window.addEventListener("pointermove", (e) => this.onPointerMove(e));
     document.body.addEventListener("keydown", (e) => this.documentKeyDown(e));
+
+    this.erase_button = document.getElementById("erase_button");
+    this.erase_button.addEventListener("click", () =>
+      this.model.toggleEraseMode()
+    );
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
-      this.model.eraseMode = !this.model.eraseMode;
-      this.model.controls.enabled = !this.model.eraseMode;
-      this.model.eButtonClicked();
+      this.model.toggleEraseMode();
     }
   }
   onPointerMove(e) {
