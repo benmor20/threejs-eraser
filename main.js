@@ -44,14 +44,7 @@ class Model {
     this.loader = new GLTFLoader();
     this.get_url = "2011HondaOdysseyScan1.glb";
     this.meshObj;
-    this.loader.load(
-      this.get_url,
-      this.loadMeshobj.bind(this),
-      undefined,
-      function (error) {
-        console.error(error);
-      }
-    );
+    this.resetMesh();
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -92,6 +85,17 @@ class Model {
     this.eraseMode = !this.eraseMode;
     this.controls.enabled = !this.eraseMode;
     this.eButtonClicked();
+  }
+
+  resetMesh() {
+    this.loader.load(
+      this.get_url,
+      this.loadMeshobj.bind(this),
+      undefined,
+      function (error) {
+        console.error(error);
+      }
+    );
   }
 
   loadMeshobj(gltf) {
@@ -223,6 +227,11 @@ class erasetoolController {
     this.erase_button = document.getElementById("erase_button");
     this.erase_button.addEventListener("click", () =>
       this.model.toggleEraseMode()
+    );
+
+    this.reset_button = document.getElementById("reset_button");
+    this.reset_button.addEventListener("click", () =>
+      this.model.resetMesh()
     );
   }
   documentKeyDown(e) {
