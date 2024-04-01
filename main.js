@@ -46,6 +46,9 @@ class Model {
     this.meshObj;
     this.resetMesh();
 
+    this.undoStack = []
+    this.currentErase = {}
+
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
 
@@ -73,6 +76,10 @@ class Model {
     this.animate();
   }
 
+  numFaces() {
+    return this.meshObj.geometry.index.array.length / 3;
+  }
+
   subEraseMode(f) {
     this.erasemodeSubscribers.push(f);
   }
@@ -85,6 +92,30 @@ class Model {
     this.eraseMode = !this.eraseMode;
     this.controls.enabled = !this.eraseMode;
     this.eButtonClicked();
+
+    if (!this.eraseMode) {
+      this.pushToUndoStack();
+    }
+  }
+
+  pushToUndoStack() {
+    if (Object.keys(this.currentErase).length > 0) {
+      this.undoStack.push(this.currentErase);
+      this.currentErase = {};
+    }
+  }
+
+  undo() {
+    if (this.undoStack.length === 0) {
+      return;
+    }
+    const toUndo = this.undoStack.pop();
+    for (const faceIdx in toUndo) {
+      for (let component = 0; component < 3; component++) {
+        this.meshObj.geometry.index.array[faceIdx * 3 + component] = toUndo[faceIdx][component];
+      }
+    }
+    this.meshObj.geometry.index.needsUpdate = true;
   }
 
   resetMesh() {
@@ -117,11 +148,8 @@ class Model {
       ];
 
       // Find each face that shares at least one vertex with the face to remove
-      for (
-        let faceIdx = 0;
-        faceIdx < this.meshObj.geometry.index.array.length / 3;
-        faceIdx++
-      ) {
+      // Includes the original face
+      for (let faceIdx = 0; faceIdx < this.numFaces(); faceIdx++) {
         let faceVertex1 = this.meshObj.geometry.index.array[faceIdx * 3];
         let faceVertex2 = this.meshObj.geometry.index.array[faceIdx * 3 + 1];
         let faceVertex3 = this.meshObj.geometry.index.array[faceIdx * 3 + 2];
@@ -131,6 +159,8 @@ class Model {
           vertices.includes(faceVertex2) ||
           vertices.includes(faceVertex3)
         ) {
+          // Log the face in the current erase object
+          this.currentErase[faceIdx] = [faceVertex1, faceVertex2, faceVertex3];
           // "Remove" the face (set all points of the face to vertex 0)
           for (let component = 0; component < 3; component++) {
             this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
@@ -199,6 +229,9 @@ class canvasController {
   }
   documentMouseUp() {
     this.model.mouseDown = false;
+    if (this.model.eraseMode) {
+      this.model.pushToUndoStack();
+    }
   }
 }
 
@@ -233,10 +266,18 @@ class erasetoolController {
     this.reset_button.addEventListener("click", () =>
       this.model.resetMesh()
     );
+
+    this.undo_button = document.getElementById("undo_button");
+    this.undo_button.addEventListener("click", () =>
+      this.model.undo()
+    );
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
       this.model.toggleEraseMode();
+    }
+    if ((e.key === "z" || e.key === "Z") && e.ctrlKey) {
+      this.model.undo();
     }
   }
   onPointerMove(e) {
