@@ -41,13 +41,20 @@ class Model {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.update();
 
+    this.undoStack = [];
+    this.currentErase = {};
+
     this.loader = new GLTFLoader();
     this.get_url = "2011HondaOdysseyScan1.glb";
     this.meshObj;
-    this.resetMesh();
-
-    this.undoStack = []
-    this.currentErase = {}
+    this.loader.load(
+      this.get_url,
+      this.loadMeshobj.bind(this),
+      undefined,
+      function (error) {
+        console.error(error);
+      }
+    );
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -119,14 +126,9 @@ class Model {
   }
 
   resetMesh() {
-    this.loader.load(
-      this.get_url,
-      this.loadMeshobj.bind(this),
-      undefined,
-      function (error) {
-        console.error(error);
-      }
-    );
+    while (this.undoStack.length > 0) {
+      this.undo();
+    }
   }
 
   loadMeshobj(gltf) {
