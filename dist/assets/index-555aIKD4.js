@@ -36015,8 +36015,10 @@ class Model {
     this.renderer.domElement.style.height = "500px";
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.update();
+    this.undoStack = [];
+    this.currentErase = {};
     this.loader = new GLTFLoader();
-    this.get_url = "2011HondaOdysseyScan1_eehOOoM(3).glb";
+    this.get_url = "2011HondaOdysseyScan1.glb";
     this.meshObj;
     this.loader.load(
       this.get_url,
@@ -36036,11 +36038,45 @@ class Model {
     this.erasemodeSubscribers = [];
     this.animate();
   }
+  numFaces() {
+    return this.meshObj.geometry.index.array.length / 3;
+  }
   subEraseMode(f) {
     this.erasemodeSubscribers.push(f);
   }
   eButtonClicked() {
     this.erasemodeSubscribers.forEach((f) => f());
+  }
+  toggleEraseMode() {
+    this.eraseMode = !this.eraseMode;
+    this.controls.enabled = !this.eraseMode;
+    this.eButtonClicked();
+    if (!this.eraseMode) {
+      this.pushToUndoStack();
+    }
+  }
+  pushToUndoStack() {
+    if (Object.keys(this.currentErase).length > 0) {
+      this.undoStack.push(this.currentErase);
+      this.currentErase = {};
+    }
+  }
+  undo() {
+    if (this.undoStack.length === 0) {
+      return;
+    }
+    const toUndo = this.undoStack.pop();
+    for (const faceIdx in toUndo) {
+      for (let component = 0; component < 3; component++) {
+        this.meshObj.geometry.index.array[faceIdx * 3 + component] = toUndo[faceIdx][component];
+      }
+    }
+    this.meshObj.geometry.index.needsUpdate = true;
+  }
+  resetMesh() {
+    while (this.undoStack.length > 0) {
+      this.undo();
+    }
   }
   loadMeshobj(gltf) {
     this.meshObj = gltf.scene.children[0];
@@ -36055,11 +36091,12 @@ class Model {
         intersects[i].face.b,
         intersects[i].face.c
       ];
-      for (let faceIdx = 0; faceIdx < this.meshObj.geometry.index.array.length / 3; faceIdx++) {
+      for (let faceIdx = 0; faceIdx < this.numFaces(); faceIdx++) {
         let faceVertex1 = this.meshObj.geometry.index.array[faceIdx * 3];
         let faceVertex2 = this.meshObj.geometry.index.array[faceIdx * 3 + 1];
         let faceVertex3 = this.meshObj.geometry.index.array[faceIdx * 3 + 2];
         if (vertices.includes(faceVertex1) || vertices.includes(faceVertex2) || vertices.includes(faceVertex3)) {
+          this.currentErase[faceIdx] = [faceVertex1, faceVertex2, faceVertex3];
           for (let component = 0; component < 3; component++) {
             this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
           }
@@ -36122,6 +36159,9 @@ class canvasController {
   }
   documentMouseUp() {
     this.model.mouseDown = false;
+    if (this.model.eraseMode) {
+      this.model.pushToUndoStack();
+    }
   }
 }
 class erasetoolViewer {
@@ -36143,12 +36183,22 @@ class erasetoolController {
     this.model = m;
     window.addEventListener("pointermove", (e) => this.onPointerMove(e));
     document.body.addEventListener("keydown", (e) => this.documentKeyDown(e));
+    this.erase_button = document.getElementById("erase_button");
+    this.erase_button.addEventListener(
+      "click",
+      () => this.model.toggleEraseMode()
+    );
+    this.reset_button = document.getElementById("reset_button");
+    this.reset_button.addEventListener("click", () => this.model.resetMesh());
+    this.undo_button = document.getElementById("undo_button");
+    this.undo_button.addEventListener("click", () => this.model.undo());
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
-      this.model.eraseMode = !this.model.eraseMode;
-      this.model.controls.enabled = !this.model.eraseMode;
-      this.model.eButtonClicked();
+      this.model.toggleEraseMode();
+    }
+    if ((e.key === "z" || e.key === "Z") && e.ctrlKey) {
+      this.model.undo();
     }
   }
   onPointerMove(e) {
@@ -36169,9 +36219,9 @@ class filesaveController {
   handleSubmitClick() {
     this.model.exporter.parse(
       this.model.meshObj,
-      (result) => {
+      async (result) => {
         const data = JSON.stringify(result);
-        this.model.saveFile(data);
+        await this.model.saveFile(data);
       },
       {}
     );
