@@ -67,16 +67,25 @@ class Model {
     this.mouseDown = false;
     this.eraseMode = false;
 
+    // this.put_url = JSON.parse(document.getElementById("put_url").textContent);
+    // [this.hostname, this.path] = breakPutUrl(this.put_url);
+    // this.mouseDown = false;
+    // this.eraseMode = false;
     // this.baseURI = document.getElementById("put_url").baseURI;
+    // this.windshield_removal_index = JSON.parse(
+    //   document.getElementById("windshield_removal_ext").innerText
+    // ).indexOf("/", 1);
     // this.windshieldRemovalExt = JSON.parse(
     //   document.getElementById("windshield_removal_ext").innerText
-    // ).slice(0, -2);
-    // this.addVehicleExt = JSON.parse(
-    //   document.getElementById("add_vehicle_ext").innerText
+    // ).slice(0, this.windshield_removal_index);
+
+    // this.visualizationExt = JSON.parse(
+    //   document.getElementById("visualization_ext").innerText
     // );
+
     // this.submitUrl =
     //   this.baseURI.slice(0, this.baseURI.indexOf(this.windshieldRemovalExt)) +
-    //   this.addVehicleExt;
+    //   this.visualizationExt;
 
     this.erasemodeSubscribers = [];
 
@@ -119,7 +128,8 @@ class Model {
     const toUndo = this.undoStack.pop();
     for (const faceIdx in toUndo) {
       for (let component = 0; component < 3; component++) {
-        this.meshObj.geometry.index.array[faceIdx * 3 + component] = toUndo[faceIdx][component];
+        this.meshObj.geometry.index.array[faceIdx * 3 + component] =
+          toUndo[faceIdx][component];
       }
     }
     this.meshObj.geometry.index.needsUpdate = true;
@@ -265,14 +275,10 @@ class erasetoolController {
     );
 
     this.reset_button = document.getElementById("reset_button");
-    this.reset_button.addEventListener("click", () =>
-      this.model.resetMesh()
-    );
+    this.reset_button.addEventListener("click", () => this.model.resetMesh());
 
     this.undo_button = document.getElementById("undo_button");
-    this.undo_button.addEventListener("click", () =>
-      this.model.undo()
-    );
+    this.undo_button.addEventListener("click", () => this.model.undo());
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
