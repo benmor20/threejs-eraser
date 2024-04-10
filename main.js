@@ -218,6 +218,7 @@ class Model {
     while (this.undoStack.length > 0) {
       this.undo();
     }
+    this.redoStack = [];
   }
 
   loadMeshobj(gltf) {
@@ -299,6 +300,7 @@ class Model {
             // Log the face in the current erase object
             this.currentErase[faceIdx] = this.getFace(faceIdx);
             this.removeFace(faceIdx);
+            this.redoStack = [];
           }
         }
       }
