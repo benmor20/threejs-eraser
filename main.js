@@ -66,6 +66,7 @@ class Model {
 
     this.mouseDown = false;
     this.eraseMode = false;
+    this.eraseDistance = 0.05;
 
     // this.put_url = JSON.parse(document.getElementById("put_url").textContent);
     // [this.hostname, this.path] = breakPutUrl(this.put_url);
@@ -146,6 +147,37 @@ class Model {
     this.scene.add(this.meshObj);
   }
 
+  getFace(faceIdx) {
+    return [
+        this.meshObj.geometry.index.array[faceIdx * 3],
+        this.meshObj.geometry.index.array[faceIdx * 3 + 1],
+        this.meshObj.geometry.index.array[faceIdx * 3 + 2],
+    ];
+  }
+
+  removeFace(faceIdx) {
+    for (let component = 0; component < 3; component++) {
+      this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
+    }
+  }
+
+  getVertexComponent(vertexIdx, component) {
+    return this.meshObj.geometry.attributes.position.array[vertexIdx * 3 + component]
+  }
+
+  getFaceCenter(faceIdx) {
+    let center = [0, 0, 0];
+    let face = this.getFace(faceIdx);
+    for (let component = 0; component < 3; component++) {
+      center[component] = (
+          this.getVertexComponent(face[0], component)
+          + this.getVertexComponent(face[1], component)
+          + this.getVertexComponent(face[2], component)
+      ) / 3.0;
+    }
+    return center;
+  }
+
   render() {
     // Set the pixel we're casting from
     this.raycaster.setFromCamera(this.pointer, this.camera);
@@ -153,30 +185,21 @@ class Model {
     // Calculate intersections
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     for (let i = 0; i < intersects.length; i++) {
-      let vertices = [
-        intersects[i].face.a,
-        intersects[i].face.b,
-        intersects[i].face.c,
-      ];
+      let intersectCenter = [intersects[i].point.x, intersects[i].point.y, intersects[i].point.z];
 
-      // Find each face that shares at least one vertex with the face to remove
-      // Includes the original face
+      // Find each face whose center is close to the point
       for (let faceIdx = 0; faceIdx < this.numFaces(); faceIdx++) {
-        let faceVertex1 = this.meshObj.geometry.index.array[faceIdx * 3];
-        let faceVertex2 = this.meshObj.geometry.index.array[faceIdx * 3 + 1];
-        let faceVertex3 = this.meshObj.geometry.index.array[faceIdx * 3 + 2];
+        let faceCenter = this.getFaceCenter(faceIdx);
+        let distance = 0;
+        for (let component = 0; component < 3; component++) {
+          distance += (intersectCenter[component] - faceCenter[component]) ** 2;
+        }
+        distance = Math.sqrt(distance);
 
-        if (
-          vertices.includes(faceVertex1) ||
-          vertices.includes(faceVertex2) ||
-          vertices.includes(faceVertex3)
-        ) {
+        if (distance <= this.eraseDistance) {
           // Log the face in the current erase object
-          this.currentErase[faceIdx] = [faceVertex1, faceVertex2, faceVertex3];
-          // "Remove" the face (set all points of the face to vertex 0)
-          for (let component = 0; component < 3; component++) {
-            this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
-          }
+          this.currentErase[faceIdx] = this.getFace(faceIdx);
+          this.removeFace(faceIdx);
         }
       }
     }
@@ -279,6 +302,11 @@ class erasetoolController {
 
     this.undo_button = document.getElementById("undo_button");
     this.undo_button.addEventListener("click", () => this.model.undo());
+
+    this.slider = document.getElementById("dist_slider");
+    this.slider.oninput = function() {
+      m.eraseDistance = this.value / 100;
+    }
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
