@@ -42,6 +42,7 @@ class Model {
     this.controls.update();
 
     this.undoStack = [];
+    this.redoStack = [];
     this.currentErase = {};
 
     this.loader = new GLTFLoader();
@@ -134,6 +135,19 @@ class Model {
       }
     }
     this.meshObj.geometry.index.needsUpdate = true;
+    this.redoStack.push(toUndo);
+  }
+
+  redo() {
+    if (this.redoStack.length === 0) {
+      return;
+    }
+    const toRedo = this.redoStack.pop();
+    for (const faceIdx in toRedo) {
+      this.removeFace(faceIdx);
+    }
+    this.meshObj.geometry.index.needsUpdate = true;
+    this.undoStack.push(toRedo);
   }
 
   resetMesh() {
@@ -303,6 +317,9 @@ class erasetoolController {
     this.undo_button = document.getElementById("undo_button");
     this.undo_button.addEventListener("click", () => this.model.undo());
 
+    this.redo_button = document.getElementById("redo_button");
+    this.redo_button.addEventListener("click", () => this.model.redo());
+
     this.slider = document.getElementById("dist_slider");
     this.slider.oninput = function() {
       m.eraseDistance = this.value / 100;
@@ -314,6 +331,9 @@ class erasetoolController {
     }
     if ((e.key === "z" || e.key === "Z") && e.ctrlKey) {
       this.model.undo();
+    }
+    if ((e.key === "y" || e.key === "Y") && e.ctrlKey) {
+      this.model.redo();
     }
   }
   onPointerMove(e) {
