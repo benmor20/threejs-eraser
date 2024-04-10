@@ -394,7 +394,7 @@ function denormalize(value, array) {
       throw new Error("Invalid component type.");
   }
 }
-function normalize(value, array) {
+function normalize$1(value, array) {
   switch (array.constructor) {
     case Float32Array:
       return value;
@@ -437,7 +437,7 @@ const MathUtils = {
   ceilPowerOfTwo,
   floorPowerOfTwo,
   setQuaternionFromProperEuler,
-  normalize,
+  normalize: normalize$1,
   denormalize
 };
 class Vector2 {
@@ -6206,7 +6206,7 @@ class BufferAttribute {
   }
   setComponent(index, component, value) {
     if (this.normalized)
-      value = normalize(value, this.array);
+      value = normalize$1(value, this.array);
     this.array[index * this.itemSize + component] = value;
     return this;
   }
@@ -6218,7 +6218,7 @@ class BufferAttribute {
   }
   setX(index, x) {
     if (this.normalized)
-      x = normalize(x, this.array);
+      x = normalize$1(x, this.array);
     this.array[index * this.itemSize] = x;
     return this;
   }
@@ -6230,7 +6230,7 @@ class BufferAttribute {
   }
   setY(index, y) {
     if (this.normalized)
-      y = normalize(y, this.array);
+      y = normalize$1(y, this.array);
     this.array[index * this.itemSize + 1] = y;
     return this;
   }
@@ -6242,7 +6242,7 @@ class BufferAttribute {
   }
   setZ(index, z) {
     if (this.normalized)
-      z = normalize(z, this.array);
+      z = normalize$1(z, this.array);
     this.array[index * this.itemSize + 2] = z;
     return this;
   }
@@ -6254,15 +6254,15 @@ class BufferAttribute {
   }
   setW(index, w) {
     if (this.normalized)
-      w = normalize(w, this.array);
+      w = normalize$1(w, this.array);
     this.array[index * this.itemSize + 3] = w;
     return this;
   }
   setXY(index, x, y) {
     index *= this.itemSize;
     if (this.normalized) {
-      x = normalize(x, this.array);
-      y = normalize(y, this.array);
+      x = normalize$1(x, this.array);
+      y = normalize$1(y, this.array);
     }
     this.array[index + 0] = x;
     this.array[index + 1] = y;
@@ -6271,9 +6271,9 @@ class BufferAttribute {
   setXYZ(index, x, y, z) {
     index *= this.itemSize;
     if (this.normalized) {
-      x = normalize(x, this.array);
-      y = normalize(y, this.array);
-      z = normalize(z, this.array);
+      x = normalize$1(x, this.array);
+      y = normalize$1(y, this.array);
+      z = normalize$1(z, this.array);
     }
     this.array[index + 0] = x;
     this.array[index + 1] = y;
@@ -6283,10 +6283,10 @@ class BufferAttribute {
   setXYZW(index, x, y, z, w) {
     index *= this.itemSize;
     if (this.normalized) {
-      x = normalize(x, this.array);
-      y = normalize(y, this.array);
-      z = normalize(z, this.array);
-      w = normalize(w, this.array);
+      x = normalize$1(x, this.array);
+      y = normalize$1(y, this.array);
+      z = normalize$1(z, this.array);
+      w = normalize$1(w, this.array);
     }
     this.array[index + 0] = x;
     this.array[index + 1] = y;
@@ -18652,31 +18652,31 @@ class InterleavedBufferAttribute {
   }
   setComponent(index, component, value) {
     if (this.normalized)
-      value = normalize(value, this.array);
+      value = normalize$1(value, this.array);
     this.data.array[index * this.data.stride + this.offset + component] = value;
     return this;
   }
   setX(index, x) {
     if (this.normalized)
-      x = normalize(x, this.array);
+      x = normalize$1(x, this.array);
     this.data.array[index * this.data.stride + this.offset] = x;
     return this;
   }
   setY(index, y) {
     if (this.normalized)
-      y = normalize(y, this.array);
+      y = normalize$1(y, this.array);
     this.data.array[index * this.data.stride + this.offset + 1] = y;
     return this;
   }
   setZ(index, z) {
     if (this.normalized)
-      z = normalize(z, this.array);
+      z = normalize$1(z, this.array);
     this.data.array[index * this.data.stride + this.offset + 2] = z;
     return this;
   }
   setW(index, w) {
     if (this.normalized)
-      w = normalize(w, this.array);
+      w = normalize$1(w, this.array);
     this.data.array[index * this.data.stride + this.offset + 3] = w;
     return this;
   }
@@ -18707,8 +18707,8 @@ class InterleavedBufferAttribute {
   setXY(index, x, y) {
     index = index * this.data.stride + this.offset;
     if (this.normalized) {
-      x = normalize(x, this.array);
-      y = normalize(y, this.array);
+      x = normalize$1(x, this.array);
+      y = normalize$1(y, this.array);
     }
     this.data.array[index + 0] = x;
     this.data.array[index + 1] = y;
@@ -18717,9 +18717,9 @@ class InterleavedBufferAttribute {
   setXYZ(index, x, y, z) {
     index = index * this.data.stride + this.offset;
     if (this.normalized) {
-      x = normalize(x, this.array);
-      y = normalize(y, this.array);
-      z = normalize(z, this.array);
+      x = normalize$1(x, this.array);
+      y = normalize$1(y, this.array);
+      z = normalize$1(z, this.array);
     }
     this.data.array[index + 0] = x;
     this.data.array[index + 1] = y;
@@ -18729,10 +18729,10 @@ class InterleavedBufferAttribute {
   setXYZW(index, x, y, z, w) {
     index = index * this.data.stride + this.offset;
     if (this.normalized) {
-      x = normalize(x, this.array);
-      y = normalize(y, this.array);
-      z = normalize(z, this.array);
-      w = normalize(w, this.array);
+      x = normalize$1(x, this.array);
+      y = normalize$1(y, this.array);
+      z = normalize$1(z, this.array);
+      w = normalize$1(w, this.array);
     }
     this.data.array[index + 0] = x;
     this.data.array[index + 1] = y;
@@ -35996,6 +35996,63 @@ window.onload = () => {
   new erasetoolController(model);
   new filesaveController(model);
 };
+function addVectors(v1, v2) {
+  if (v1.length !== v2.length) {
+    throw "Vector lengths do not match";
+  }
+  let ans = [];
+  for (let idx = 0; idx < v1.length; idx++) {
+    ans.push(v1[idx] + v2[idx]);
+  }
+  return ans;
+}
+function subtractVectors(v1, v2) {
+  if (v1.length !== v2.length) {
+    throw "Vector lengths do not match";
+  }
+  let ans = [];
+  for (let idx = 0; idx < v1.length; idx++) {
+    ans.push(v1[idx] - v2[idx]);
+  }
+  return ans;
+}
+function scaleVector(vec, scale) {
+  let ans = [];
+  for (let idx = 0; idx < vec.length; idx++) {
+    ans.push(vec[idx] * scale);
+  }
+  return ans;
+}
+function vectorLength(vec) {
+  let ans = 0;
+  for (let idx = 0; idx < vec.length; idx++) {
+    ans += vec[idx] ** 2;
+  }
+  return Math.sqrt(ans);
+}
+function normalize(vec) {
+  return scaleVector(vec, 1 / vectorLength(vec));
+}
+function dot(v1, v2) {
+  if (v1.length !== v2.length) {
+    throw "Vector lengths do not match";
+  }
+  let ans = 0;
+  for (let idx = 0; idx < v1.length; idx++) {
+    ans += v1[idx] * v2[idx];
+  }
+  return ans;
+}
+function cross(v1, v2) {
+  if (v1.length !== 3 || v2.length !== 3) {
+    throw "Can only take cross product of two 3-element vectors";
+  }
+  return [
+    v1[1] * v2[2] - v1[2] * v2[1],
+    v1[2] * v2[0] - v1[0] * v2[2],
+    v1[0] * v2[1] - v1[1] * v2[0]
+  ];
+}
 class Model {
   constructor() {
     this.scene = new Scene();
@@ -36107,36 +36164,58 @@ class Model {
       this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
     }
   }
+  getVertex(vertexIdx) {
+    return [
+      this.getVertexComponent(vertexIdx, 0),
+      this.getVertexComponent(vertexIdx, 1),
+      this.getVertexComponent(vertexIdx, 2)
+    ];
+  }
   getVertexComponent(vertexIdx, component) {
     return this.meshObj.geometry.attributes.position.array[vertexIdx * 3 + component];
   }
   getFaceCenter(faceIdx) {
-    let center = [0, 0, 0];
     let face = this.getFace(faceIdx);
-    for (let component = 0; component < 3; component++) {
-      center[component] = (this.getVertexComponent(face[0], component) + this.getVertexComponent(face[1], component) + this.getVertexComponent(face[2], component)) / 3;
-    }
-    return center;
+    return scaleVector(
+      addVectors(
+        addVectors(
+          this.getVertex(face[0]),
+          this.getVertex(face[1])
+        ),
+        this.getVertex(face[2])
+      ),
+      1 / 3
+    );
+  }
+  getFaceNormal(faceIdx) {
+    let face = this.getFace(faceIdx);
+    let vertex1 = this.getVertex(face[0]);
+    let vertex2 = this.getVertex(face[1]);
+    let vertex3 = this.getVertex(face[2]);
+    let edge1 = subtractVectors(vertex2, vertex1);
+    let edge2 = subtractVectors(vertex3, vertex1);
+    return normalize(cross(edge1, edge2));
   }
   render() {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     for (let i = 0; i < intersects.length; i++) {
-      let intersectCenter = [
-        intersects[i].point.x,
-        intersects[i].point.y,
-        intersects[i].point.z
+      let intersectCenter = [intersects[i].point.x, intersects[i].point.y, intersects[i].point.z];
+      let intersectNormal = [
+        intersects[i].face.normal.x,
+        intersects[i].face.normal.y,
+        intersects[i].face.normal.z
       ];
       for (let faceIdx = 0; faceIdx < this.numFaces(); faceIdx++) {
         let faceCenter = this.getFaceCenter(faceIdx);
-        let distance = 0;
-        for (let component = 0; component < 3; component++) {
-          distance += (intersectCenter[component] - faceCenter[component]) ** 2;
-        }
-        distance = Math.sqrt(distance);
+        let distance = vectorLength(subtractVectors(faceCenter, intersectCenter));
         if (distance <= this.eraseDistance) {
-          this.currentErase[faceIdx] = this.getFace(faceIdx);
-          this.removeFace(faceIdx);
+          let faceNormal = this.getFaceNormal(faceIdx);
+          let normalDot = dot(intersectNormal, faceNormal);
+          if (normalDot > 0) {
+            this.currentErase[faceIdx] = this.getFace(faceIdx);
+            this.removeFace(faceIdx);
+          }
         }
       }
     }
