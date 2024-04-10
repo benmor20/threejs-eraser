@@ -14,7 +14,6 @@ function breakPutUrl(url) {
 window.onload = () => {
   const model = new Model();
   new canvasController(model);
-  new erasetoolViewer(model);
   new erasetoolController(model);
   new filesaveController(model);
 };
@@ -111,6 +110,7 @@ class Model {
 
     this.loader = new GLTFLoader();
     this.get_url = "2011HondaOdysseyScan1.glb";
+    // this.get_url = JSON.parse(document.getElementById("get_url").textContent);
     this.meshObj;
     this.loader.load(
       this.get_url,
@@ -227,9 +227,9 @@ class Model {
 
   getFace(faceIdx) {
     return [
-        this.meshObj.geometry.index.array[faceIdx * 3],
-        this.meshObj.geometry.index.array[faceIdx * 3 + 1],
-        this.meshObj.geometry.index.array[faceIdx * 3 + 2],
+      this.meshObj.geometry.index.array[faceIdx * 3],
+      this.meshObj.geometry.index.array[faceIdx * 3 + 1],
+      this.meshObj.geometry.index.array[faceIdx * 3 + 2],
     ];
   }
 
@@ -248,7 +248,9 @@ class Model {
   }
 
   getVertexComponent(vertexIdx, component) {
-    return this.meshObj.geometry.attributes.position.array[vertexIdx * 3 + component]
+    return this.meshObj.geometry.attributes.position.array[
+      vertexIdx * 3 + component
+    ];
   }
 
   getFaceCenter(faceIdx) {
@@ -368,21 +370,6 @@ class canvasController {
   }
 }
 
-class erasetoolViewer {
-  constructor(m) {
-    this.model = m;
-    this.eraseMessage = document.getElementById("erase_mode");
-    this.model.subEraseMode(() => this.toggleEraseMessage());
-  }
-  toggleEraseMessage() {
-    if (this.eraseMessage.style.display == "none") {
-      this.eraseMessage.style.display = "block";
-    } else {
-      this.eraseMessage.style.display = "none";
-    }
-  }
-}
-
 class erasetoolController {
   constructor(m) {
     this.model = m;
@@ -405,9 +392,11 @@ class erasetoolController {
     this.redo_button.addEventListener("click", () => this.model.redo());
 
     this.slider = document.getElementById("dist_slider");
-    this.slider.oninput = function() {
+    this.slider.oninput = function () {
       m.eraseDistance = this.value / 100;
-    }
+    };
+
+    this.model.subEraseMode(() => this.switchButtonText());
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
@@ -429,6 +418,13 @@ class erasetoolController {
       ((e.clientX - rect.left) / (rect.right - rect.left)) * 2 - 1;
     this.model.pointer.y =
       -((e.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
+  }
+  switchButtonText() {
+    if (this.model.eraseMode) {
+      this.erase_button.innerText = "Turn Off Erase Mode";
+    } else {
+      this.erase_button.innerText = "Turn On Erase Mode";
+    }
   }
 }
 

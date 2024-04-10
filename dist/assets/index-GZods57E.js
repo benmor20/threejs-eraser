@@ -35993,7 +35993,6 @@ function breakPutUrl(url2) {
 window.onload = () => {
   const model = new Model();
   new canvasController(model);
-  new erasetoolViewer(model);
   new erasetoolController(model);
   new filesaveController(model);
 };
@@ -36016,6 +36015,7 @@ class Model {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.update();
     this.undoStack = [];
+    this.redoStack = [];
     this.currentErase = {};
     this.loader = new GLTFLoader();
     this.get_url = "2011HondaOdysseyScan1.glb";
@@ -36035,6 +36035,7 @@ class Model {
     [this.hostname, this.path] = breakPutUrl(this.put_url);
     this.mouseDown = false;
     this.eraseMode = false;
+    this.eraseDistance = 0.05;
     this.erasemodeSubscribers = [];
     this.animate();
   }
@@ -36072,6 +36073,18 @@ class Model {
       }
     }
     this.meshObj.geometry.index.needsUpdate = true;
+    this.redoStack.push(toUndo);
+  }
+  redo() {
+    if (this.redoStack.length === 0) {
+      return;
+    }
+    const toRedo = this.redoStack.pop();
+    for (const faceIdx in toRedo) {
+      this.removeFace(faceIdx);
+    }
+    this.meshObj.geometry.index.needsUpdate = true;
+    this.undoStack.push(toRedo);
   }
   resetMesh() {
     while (this.undoStack.length > 0) {
@@ -36082,24 +36095,48 @@ class Model {
     this.meshObj = gltf.scene.children[0];
     this.scene.add(this.meshObj);
   }
+  getFace(faceIdx) {
+    return [
+      this.meshObj.geometry.index.array[faceIdx * 3],
+      this.meshObj.geometry.index.array[faceIdx * 3 + 1],
+      this.meshObj.geometry.index.array[faceIdx * 3 + 2]
+    ];
+  }
+  removeFace(faceIdx) {
+    for (let component = 0; component < 3; component++) {
+      this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
+    }
+  }
+  getVertexComponent(vertexIdx, component) {
+    return this.meshObj.geometry.attributes.position.array[vertexIdx * 3 + component];
+  }
+  getFaceCenter(faceIdx) {
+    let center = [0, 0, 0];
+    let face = this.getFace(faceIdx);
+    for (let component = 0; component < 3; component++) {
+      center[component] = (this.getVertexComponent(face[0], component) + this.getVertexComponent(face[1], component) + this.getVertexComponent(face[2], component)) / 3;
+    }
+    return center;
+  }
   render() {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     for (let i = 0; i < intersects.length; i++) {
-      let vertices = [
-        intersects[i].face.a,
-        intersects[i].face.b,
-        intersects[i].face.c
+      let intersectCenter = [
+        intersects[i].point.x,
+        intersects[i].point.y,
+        intersects[i].point.z
       ];
       for (let faceIdx = 0; faceIdx < this.numFaces(); faceIdx++) {
-        let faceVertex1 = this.meshObj.geometry.index.array[faceIdx * 3];
-        let faceVertex2 = this.meshObj.geometry.index.array[faceIdx * 3 + 1];
-        let faceVertex3 = this.meshObj.geometry.index.array[faceIdx * 3 + 2];
-        if (vertices.includes(faceVertex1) || vertices.includes(faceVertex2) || vertices.includes(faceVertex3)) {
-          this.currentErase[faceIdx] = [faceVertex1, faceVertex2, faceVertex3];
-          for (let component = 0; component < 3; component++) {
-            this.meshObj.geometry.index.array[faceIdx * 3 + component] = 0;
-          }
+        let faceCenter = this.getFaceCenter(faceIdx);
+        let distance = 0;
+        for (let component = 0; component < 3; component++) {
+          distance += (intersectCenter[component] - faceCenter[component]) ** 2;
+        }
+        distance = Math.sqrt(distance);
+        if (distance <= this.eraseDistance) {
+          this.currentErase[faceIdx] = this.getFace(faceIdx);
+          this.removeFace(faceIdx);
         }
       }
     }
@@ -36164,20 +36201,6 @@ class canvasController {
     }
   }
 }
-class erasetoolViewer {
-  constructor(m) {
-    this.model = m;
-    this.eraseMessage = document.getElementById("erase_mode");
-    this.model.subEraseMode(() => this.toggleEraseMessage());
-  }
-  toggleEraseMessage() {
-    if (this.eraseMessage.style.display == "none") {
-      this.eraseMessage.style.display = "block";
-    } else {
-      this.eraseMessage.style.display = "none";
-    }
-  }
-}
 class erasetoolController {
   constructor(m) {
     this.model = m;
@@ -36192,6 +36215,13 @@ class erasetoolController {
     this.reset_button.addEventListener("click", () => this.model.resetMesh());
     this.undo_button = document.getElementById("undo_button");
     this.undo_button.addEventListener("click", () => this.model.undo());
+    this.redo_button = document.getElementById("redo_button");
+    this.redo_button.addEventListener("click", () => this.model.redo());
+    this.slider = document.getElementById("dist_slider");
+    this.slider.oninput = function() {
+      m.eraseDistance = this.value / 100;
+    };
+    this.model.subEraseMode(() => this.switchButtonText());
   }
   documentKeyDown(e) {
     if (e.key === "e" || e.key === "E") {
@@ -36200,11 +36230,21 @@ class erasetoolController {
     if ((e.key === "z" || e.key === "Z") && e.ctrlKey) {
       this.model.undo();
     }
+    if ((e.key === "y" || e.key === "Y") && e.ctrlKey) {
+      this.model.redo();
+    }
   }
   onPointerMove(e) {
     let rect = e.target.getBoundingClientRect();
     this.model.pointer.x = (e.clientX - rect.left) / (rect.right - rect.left) * 2 - 1;
     this.model.pointer.y = -((e.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
+  }
+  switchButtonText() {
+    if (this.model.eraseMode) {
+      this.erase_button.innerText = "Turn Off Erase Mode";
+    } else {
+      this.erase_button.innerText = "Turn On Erase Mode";
+    }
   }
 }
 class filesaveController {
