@@ -76,30 +76,33 @@ function cross(v1, v2) {
     throw "Can only take cross product of two 3-element vectors";
   }
   return [
-      v1[1] * v2[2] - v1[2] * v2[1],
-      v1[2] * v2[0] - v1[0] * v2[2],
-      v1[0] * v2[1] - v1[1] * v2[0]
-  ]
+    v1[1] * v2[2] - v1[2] * v2[1],
+    v1[2] * v2[0] - v1[0] * v2[2],
+    v1[0] * v2[1] - v1[1] * v2[0],
+  ];
 }
 
 class Model {
   constructor() {
-    this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(
+    this.container = document.getElementById("erase_tool_container");
+    this.scene = new Scene();
+    this.camera = new PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      this.container.offsetWidth / this.container.offsetHeight,
       0.1,
-      1000
+      1e3
     );
     this.camera.position.z = 5;
 
-    this.light = new THREE.AmbientLight(0xffffff); // soft white light
+    this.light = new AmbientLight(16777215);
     this.scene.add(this.light);
 
-    this.renderer = new THREE.WebGLRenderer();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.domElement.style.width = "100%";
-    this.renderer.domElement.style.height = "500px";
+    this.renderer = new WebGLRenderer();
+    this.renderer.setSize(
+      this.container.offsetWidth,
+      this.container.offsetHeight
+    );
+    this.renderer.setPixelRatio(window.devicePixelRatio);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.update();
@@ -156,6 +159,16 @@ class Model {
     this.erasemodeSubscribers = [];
 
     this.animate();
+
+    addEventListener("resize", () => {
+      this.camera.aspect =
+        this.container.offsetWidth / this.container.offsetHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(
+        this.container.offsetWidth,
+        this.container.offsetHeight
+      );
+    });
   }
 
   numFaces() {
@@ -242,9 +255,9 @@ class Model {
 
   getVertex(vertexIdx) {
     return [
-        this.getVertexComponent(vertexIdx, 0),
-        this.getVertexComponent(vertexIdx, 1),
-        this.getVertexComponent(vertexIdx, 2)
+      this.getVertexComponent(vertexIdx, 0),
+      this.getVertexComponent(vertexIdx, 1),
+      this.getVertexComponent(vertexIdx, 2),
     ];
   }
 
@@ -257,12 +270,12 @@ class Model {
   getFaceCenter(faceIdx) {
     let face = this.getFace(faceIdx);
     return scaleVector(
-        addVectors(
-            addVectors(
-                this.getVertex(face[0]),
-                this.getVertex(face[1])),
-            this.getVertex(face[2])),
-        1.0 / 3);
+      addVectors(
+        addVectors(this.getVertex(face[0]), this.getVertex(face[1])),
+        this.getVertex(face[2])
+      ),
+      1.0 / 3
+    );
   }
 
   getFaceNormal(faceIdx) {
@@ -282,17 +295,23 @@ class Model {
     // Calculate intersections
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     for (let i = 0; i < intersects.length; i++) {
-      let intersectCenter = [intersects[i].point.x, intersects[i].point.y, intersects[i].point.z];
+      let intersectCenter = [
+        intersects[i].point.x,
+        intersects[i].point.y,
+        intersects[i].point.z,
+      ];
       let intersectNormal = [
-          intersects[i].face.normal.x,
-          intersects[i].face.normal.y,
-          intersects[i].face.normal.z
+        intersects[i].face.normal.x,
+        intersects[i].face.normal.y,
+        intersects[i].face.normal.z,
       ];
 
       // Find each face whose center is close to the point
       for (let faceIdx = 0; faceIdx < this.numFaces(); faceIdx++) {
         let faceCenter = this.getFaceCenter(faceIdx);
-        let distance = vectorLength(subtractVectors(faceCenter, intersectCenter));
+        let distance = vectorLength(
+          subtractVectors(faceCenter, intersectCenter)
+        );
         if (distance <= this.eraseDistance) {
           let faceNormal = this.getFaceNormal(faceIdx);
           let normalDot = dot(intersectNormal, faceNormal);
@@ -394,6 +413,7 @@ class erasetoolController {
     this.redo_button.addEventListener("click", () => this.model.redo());
 
     this.slider = document.getElementById("dist_slider");
+    this.slider.value = String(this.model.eraseDistance * 100);
     this.slider.oninput = function () {
       m.eraseDistance = this.value / 100;
     };
