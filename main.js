@@ -14,6 +14,7 @@ function breakPutUrl(url) {
 window.onload = () => {
   const model = new Model();
   new canvasController(model);
+  new erasetoolViewer(model);
   new erasetoolController(model);
   new filesaveController(model);
 };
@@ -387,6 +388,21 @@ class canvasController {
     this.model.mouseDown = false;
     if (this.model.eraseMode) {
       this.model.pushToUndoStack();
+    }
+  }
+}
+
+class erasetoolViewer {
+  constructor(m) {
+    this.model = m;
+    this.eraseMessage = document.getElementById("erase_mode");
+    this.model.subEraseMode(() => this.toggleEraseMessage());
+  }
+  toggleEraseMessage() {
+    if (this.eraseMessage.style.display == "none") {
+      this.eraseMessage.style.display = "block";
+    } else {
+      this.eraseMessage.style.display = "none";
     }
   }
 }
